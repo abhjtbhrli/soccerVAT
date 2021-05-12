@@ -12,7 +12,7 @@ library(shiny)
 library(ggsoccer)
 library(dplyr)
 library(magrittr)
-library(devtools)
+#library(devtools)
 library(readr)
 library(shinythemes)
 library(extrafont)
@@ -135,7 +135,7 @@ ui <- fluidPage(
             br(),
             "©Abhijit Bharali",
             
-            
+        ),    
             
             
         
