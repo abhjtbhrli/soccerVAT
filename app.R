@@ -1,17 +1,13 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
 #Shiny Contest 2021 Submission
 #by Abhijit Bharali
 #twitter @abhibharali
 #soccer Visual Analysis App (soccerVAT)
 
+
+
+
+
+# Loading libraries............................................................................................................................................
 library(shiny)
 library(ggsoccer)
 library(dplyr)
@@ -24,26 +20,29 @@ loadfonts(device = "postscript")
 library(ggplot2)
 library(ggrepel)
 
-# Sys.sleep(1)
-# devtools::install_github("statsbomb/StatsBombR")
-# library(StatsBombR)
 
-# comp<-StatsBombR::FreeCompetitions()
-# comp<-comp%>%filter(competition_id==43)
-# matches<-FreeMatches(Competitions = comp)
-# wcdata<-StatsBombFreeEvents(MatchesDF = matches,Parallel = T)
-# wcdata<-allclean(wcdata)
 
+
+
+# Importing the data............................................................................................................................................
 wcdata<-read_rds("wcdata.rds")
 matches<-read_rds("matches.rds")
-#matches<-matches%>%mutate(matchup=paste0(competition_stage.name," - ",home_team.home_team_name," vs ",away_team.away_team_name))
 
+
+
+
+
+# Defining functions............................................................................................................................................
 formation_data<-data.frame(
     position.id=c(1,2,3,4,5,6,7,9,10,11,8,12,13,14,15,16,17,18,19,20,21,25,22,23,24),
     location.x=c(10,20,20,20,20,20,26.3,26.3,26.3,26.3,26.3,32.6,32.6,32.6,32.6,32.6,
                  38.9,38.9,38.9,38.9,38.9,45.2,51.5,51.5,51.5),
     location.y=c(40,10,25,40,55,70,10,25,40,55,70,10,25,40,55,70,10,25,40,55,70,40,25,40,55)
 )
+
+
+
+
 
 formation_func<-function(df){
     formation_data<-data.frame(
@@ -55,6 +54,10 @@ formation_func<-function(df){
     new_df<-left_join(df,formation_data,by="position.id")
     return(new_df)
 }
+
+
+
+
 
 dfForPassNet<-function(df){
     df1=df%>%group_by(player.name,pass.recipient.name)%>%dplyr::summarise(Passes=(n()))
@@ -88,18 +91,23 @@ dfForPassNet<-function(df){
     return(d)
 }
 
+
+
+
+
 '%notin%'<-Negate('%in%')
 
-# Define UI for application that draws a histogram
+
+
+
+
+# Define UI for application.......................................................................................................................................
 ui <- fluidPage(
+    # Themes, titles and headers
     column(12,titlePanel(strong(tags$p("soccer Visual Analysis Tool")),windowTitle="soccerVAT")),
     tags$head(tags$style(HTML('* {font-family: "Tahoma"};'))),
     theme = shinytheme("paper"),
-
-    # Application title
-    #titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins 
+    # Sidebar detailing
     sidebarLayout(
         sidebarPanel(
             width = 3,
@@ -109,7 +117,6 @@ ui <- fluidPage(
             selectizeInput("b1","SELECT MATCH (or SEARCH):",
                            levels(factor(matches$matchup)),
                            options = list(maxItems = 1,placeholder="Search player")),
-            #selectizeInput("b2","Select season:",levels(factor(islpassultimate$season))),
             uiOutput("secondSelection"),
             actionButton("do","GO"),
             br(),
@@ -127,19 +134,15 @@ ui <- fluidPage(
             br(),
             br(),
             "©Abhijit Bharali",
+            
+            
+            
+            
         
-        # sidebarPanel(
-        #     sliderInput("bins",
-        #                 "Number of bins:",
-        #                 min = 1,
-        #                 max = 50,
-        #                 value = 30)
-        ),
-
-        # Show a plot of the generated distribution
+        # Main panel detailing
         mainPanel(
             width = 9,
-            # Output: Tabset w/ plot, summary, and table ----
+            # Output: Tabset with 6 plots ----
             tabsetPanel(type = "tabs",
                         tabPanel("TEAMSHEETS", plotOutput("plot1",height = "700px",width = "1000px")),
                         tabPanel("SHOTS", plotOutput("plot2",height = "600px",width = "1000px")),
@@ -149,25 +152,28 @@ ui <- fluidPage(
                         tabPanel("ACTION DENSITY", plotOutput("plot6",height = "600px",width = "1000px"))
             )
             
-           #plotOutput("distPlot")
         )
     )
 )
+    
+    
+    
+    
 
-# Define server logic required to draw a histogram
+# Define server logic required to draw the plots...................................................................................................................
 server <- function(input, output,session) {
     
     x<-eventReactive(input$do,{
         formation_func(as.data.frame(((wcdata%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$tactics.lineup)[1]))
     }
-    
     )
+    
     
     y<-eventReactive(input$do,{
         formation_func(as.data.frame(((wcdata%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$tactics.lineup)[2]))
     }
-    
     )
+    
     
     z<-eventReactive(input$do,{
         dfForPassNet(wcdata%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))],
@@ -175,8 +181,7 @@ server <- function(input, output,session) {
                                      type.name=="Pass",
                                      index<which((wcdata%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))],
                                                                   team.name==matches$home_team.home_team_name[(which(matches$matchup==input$b1))]))$type.name=="Substitution")[1]))
-    }
-        
+    }   
     )
     
     
@@ -187,8 +192,10 @@ server <- function(input, output,session) {
                                      index<which((wcdata%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))],
                                                                   team.name==matches$away_team.away_team_name[(which(matches$matchup==input$b1))]))$type.name=="Substitution")[1]))
     }
-    
     )
+    
+    
+    
     
     
     output$plot1<-renderPlot(({
@@ -233,6 +240,10 @@ server <- function(input, output,session) {
         
     }),width = "auto",height = "auto",res = 84)
     
+    
+    
+    
+    
     output$plot2<-renderPlot(({
         ggplot()+
             annotate_pitch(dimensions = pitch_statsbomb,colour = "black",fill = "snow1")+
@@ -243,7 +254,6 @@ server <- function(input, output,session) {
                                               period!=5),
                        aes(x=120-location.x,y=location.y,size=2*shot.statsbomb_xg,colour=team.name),
                        show.legend = F,alpha=0.9)+
-            #scale_fill_gradient(low = "red",high = "black")+
             geom_point(data = wcdata%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))],
                                               type.name=="Shot",
                                               shot.outcome.name!="Goal",
@@ -273,15 +283,10 @@ server <- function(input, output,session) {
                              size=3.5, alpha=0.7,colour="black",box.padding = unit(0.1,"cm"),
                              nudge_y = 3,label.padding=unit(0.1,"cm"),label.r=unit(0.1,"cm"),
                              label.size=unit(0.1,"cm"),point.padding = unit(0.1,"cm"))+
-            # coord_flip(xlim = c(57.4,0),
-            #            ylim = c(0,80))+
             coord_flip(xlim = c(120,0),
                        ylim = c(0,80))+
             facet_wrap(~team.name)+
-            labs(
-                # title = paste0((matches%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$home_team.home_team_name," ",(matches%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$home_score,"-",(matches%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$away_score," ",(matches%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$away_team.away_team_name),
-                #  subtitle = (matches%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$competition_stage.name,
-                 caption = "labeled points = GOALS")+
+            labs(caption = "labeled points = GOALS")+
             theme(
                 plot.background = element_rect(fill = "white"),
                 panel.background = element_rect(fill = "white"),
@@ -295,30 +300,9 @@ server <- function(input, output,session) {
         
     }),width = "auto",height = "auto",res = 84)
     
-    # output$plot2<-renderPlot(({
-    #     ggplot()+
-    #         annotate_pitch(dimensions = pitch_statsbomb,colour = "black",fill = "white")+
-    #         theme_pitch(aspect_ratio = 0.5)+
-    #         geom_point(data = wcdata%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))],
-    #                                           type.name=="Shot"),
-    #                    aes(x=120-location.x,y=location.y,
-    #                        size=2*shot.statsbomb_xg,colour=team.name),
-    #                    show.legend = F)+
-    #         geom_point(data = wcdata%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))],
-    #                                           type.name=="Shot"),
-    #                    aes(x=120-location.x,y=location.y,size=2*shot.statsbomb_xg),
-    #                    show.legend = F,colour="black",shape=1)+
-    #         coord_flip(xlim = c(60,0),
-    #                    ylim = c(0,80))+
-    #         facet_wrap(~team.name,nrow = 2)+
-    #         theme(
-    #             plot.background = element_rect(fill = "white"),
-    #             panel.background = element_rect(fill = "white"),
-    #             strip.background = element_rect(fill="white"),
-    #             strip.text = element_text(family = "Impact",size = 20)
-    #         )
-    #     
-    # }))
+    
+    
+    
     
     output$plot3<-renderPlot(({
         ggplot()+
@@ -384,6 +368,9 @@ server <- function(input, output,session) {
         
     }),width = "auto",height = "auto",res = 84)
     
+    
+    
+    
     output$plot5<-renderPlot(({
         ggplot()+
             annotate_pitch(dimensions = pitch_statsbomb,colour = "black",fill = "snow1")+
@@ -401,10 +388,7 @@ server <- function(input, output,session) {
                          arrow = arrow(type = "closed",length = unit(0.07,"inches")))+
             facet_wrap(~team.name)+
             coord_flip()+
-            labs(
-                # title = paste0((matches%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$home_team.home_team_name," ",(matches%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$home_score,"-",(matches%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$away_score," ",(matches%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$away_team.away_team_name),
-                #  subtitle = (matches%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$competition_stage.name,
-                 caption = "Passes that moved the ball at least 25m towards goal")+
+            labs(caption = "Passes that moved the ball at least 25m towards goal")+
             theme(
                 plot.background = element_rect(fill = "white"),
                 panel.background = element_rect(fill = "white"),
@@ -418,6 +402,10 @@ server <- function(input, output,session) {
         
     }),width = "auto",height = "auto",res = 84)
     
+    
+    
+    
+    
     output$plot6<-renderPlot(({
         ggplot()+
             annotate_pitch(dimensions = pitch_statsbomb,colour = "black",fill = "snow1")+
@@ -426,11 +414,8 @@ server <- function(input, output,session) {
                                                    location.y<80,location.y>0),
                             aes(x=location.x,y=location.y,alpha=..level..,colour=team.name),
                             show.legend = F)+
-            #scale_color_manual(values=c("#1A78CF", "#D70232"))+
             coord_flip()+
             facet_grid(~team.name)+
-            # labs(title = paste0((matches%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$home_team.home_team_name," ",(matches%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$home_score,"-",(matches%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$away_score," ",(matches%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$away_team.away_team_name),
-            #      subtitle = (matches%>%filter(match_id==matches$match_id[(which(matches$matchup==input$b1))]))$competition_stage.name)+
             theme(
                 plot.background = element_rect(fill = "white"),
                 panel.background = element_rect(fill = "white"),
@@ -444,15 +429,12 @@ server <- function(input, output,session) {
         
     }),width = "auto",height = "auto",res = 84)
 
-    # output$distPlot <- renderPlot({
-    #     # generate bins based on input$bins from ui.R
-    #     x    <- faithful[, 2]
-    #     bins <- seq(min(x), max(x), length.out = input$bins + 1)
-    # 
-    #     # draw the histogram with the specified number of bins
-    #     hist(x, breaks = bins, col = 'darkgray', border = 'white')
-    # })
+    
 }
+    
+    
+    
+    
 
 # Run the application 
 shinyApp(ui = ui, server = server)
